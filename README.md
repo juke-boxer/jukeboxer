@@ -1,4 +1,7 @@
-# simple-react-full-stack
+# jukeboxer
+
+**Note that in /src there is a file called creds.js needed to run the program.
+The location of that file is on a need-to-know basis**.
 
 [![Build Status](https://travis-ci.org/crsandeep/simple-react-full-stack.svg?branch=master)](https://travis-ci.org/crsandeep/simple-react-full-stack)
 [![Greenkeeper badge](https://badges.greenkeeper.io/crsandeep/simple-react-full-stack.svg)](https://greenkeeper.io/)
