@@ -1,10 +1,13 @@
-const { Pool } = require("pg");
-const fs = require("fs");
+const { Pool } = require('pg');
 
-const db_creds = JSON.parse(fs.readFileSync(".db_creds", "utf8");
+// credentials are stored in src/creds.js, but that is not included in source control
+const { dbConnString } = require('../../creds');
 
-const pool = new Pool(db_creds);
+const pool = new Pool({
+  connectionString: dbConnString,
+  ssl: true
+});
 
 module.exports = {
-        query: (text, params) => pool.query(text, params);
+  query: (text, params) => pool.query(text, params)
 };
