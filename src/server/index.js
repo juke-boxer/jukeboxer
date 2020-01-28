@@ -1,9 +1,17 @@
 const express = require('express');
-const os = require('os');
+const router = require('express-promise-router')();
 
 const app = express();
+const db = require('./db');
+
+async function getUserById(req, res, next) {
+  const { id } = req.params;
+  const { rows } = await db.query('SELECT * FROM users where userid=$1', [id]);
+  res.send(rows[0]);
+  return next();
+}
 
 app.use(express.static('dist'));
-app.get('/api/getUsername', (req, res) => res.send({ username: os.userInfo().username }));
-
+router.get('/api/users/getUserById/:id', getUserById);
+app.use(router);
 app.listen(process.env.PORT || 8080, () => console.log(`Listening on port ${process.env.PORT || 8080}!`));
