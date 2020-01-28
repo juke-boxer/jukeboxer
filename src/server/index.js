@@ -4,7 +4,7 @@ const router = require('express-promise-router')();
 
 const app = express();
 
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 const db = require('./db');
