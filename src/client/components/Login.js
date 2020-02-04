@@ -1,22 +1,22 @@
-import React, { Component, useState } from 'react';
+import React, { Component } from 'react';
 import './Login.css';
 
 export default class Login extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      email: '',
+      username: '',
       password: ''
-    }
+    };
   }
 
   validateForm = () => {
-    const { email, password } = this.state;
-    return email.length > 0 && password.length > 0;
+    const { username, password } = this.state;
+    return username.length > 0 && password.length > 0;
   }
 
-  setEmail = (newVal) => {
-    this.setState({ email: newVal });
+  setUsername = (newVal) => {
+    this.setState({ username: newVal });
   }
 
   setPassword = (newVal) => {
@@ -44,7 +44,7 @@ export default class Login extends Component {
         <div className="content">
           <form onSubmit={this.handleSubmit}>
             <b>Jukeboxer</b>
-            <input value={this.email} onChange={e => this.setEmail(e.target.value)} type="email" placeholder="Username" />
+            <input value={this.username} onChange={e => this.setUsername(e.target.value)} type="text" placeholder="Username" />
             <input value={this.password} onChange={e => this.setPassword(e.target.value)} type="password" placeholder="Password" />
             <button type="submit" disabled={!this.validateForm()}>Login</button>
           </form>

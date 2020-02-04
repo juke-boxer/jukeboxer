@@ -17,7 +17,7 @@ async function createUser(req, res, next) {
 
 async function login(req, res, next) {
   const { username, password } = req.body;
-  const { rows } = await db.query('SELECT * FROM users WHERE userid=$1 AND password=$2', [username, password]);
+  const { rows } = await db.query('SELECT * FROM users WHERE username=$1 AND password=$2', [username, password]);
 
   if (rows.length > 0) {
     res.send('success');
