@@ -27,7 +27,7 @@ async function login(req, res, next) {
 }
 
 router.get('/getUserById/:id', getUserById);
-router.post('/api/users/createUser', createUser);
+router.post('/createUser', createUser);
 router.post('/login', login);
 
 module.exports = router;
