@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 export default class Login extends Component {
@@ -47,6 +48,7 @@ export default class Login extends Component {
             <input value={this.username} onChange={e => this.setUsername(e.target.value)} type="text" placeholder="Username" />
             <input value={this.password} onChange={e => this.setPassword(e.target.value)} type="password" placeholder="Password" />
             <button type="submit" disabled={!this.validateForm()}>Login</button>
+            <Link to="/register">Click here to create an account</Link>
           </form>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 export default () => {
@@ -11,28 +12,33 @@ export default () => {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    console.log(useState());
+    if (password !== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
 
     fetch('api/users/createUser', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(useState()),
+      body: JSON.stringify({ username, password }),
     })
       .then(res => res.text())
-      .then(data => alert(data));
+      .then(data => alert(data.message));
   };
 
   return (
     <div className="container">
       <div className="content">
         <form onSubmit={handleSubmit}>
-          <b>Jukeboxer</b>
+          <b>Register</b>
           <input value={username} onChange={e => setUsername(e.target.value)} type="text" placeholder="Username" />
           <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Password" />
-          <input value={password} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Confirm Password" />
-          <button type="submit" disabled={!validateForm()}>Login</button>
+          <input value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} type="password" placeholder="Confirm Password" />
+          <button type="submit" disabled={!validateForm}>Register</button>
+          <p>Already have an account?</p>
+          <Link to="/login">Click here to login</Link>
         </form>
       </div>
     </div>
