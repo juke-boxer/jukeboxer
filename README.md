@@ -272,12 +272,25 @@ dev: npm run __dev
 web: npm install && npm run __start
 ```
 We have set it up to where the package.json has the scripts with the '\_\_' prefix which the Procfile uses, and the ones without the '\_\_' prefix so that everything can be done inside the package.json file, which allows for better integration with VS Code.  Here's a really simple diagram explaining the workflow
-package.json __command -> Procfile command -> package.json command
+package.json \_\_command -> Procfile command -> package.json command
+
+#### Managing the application configuration
+##### View current config var values
+`$ heroku -a jukeboxer-capstone config`
+
+##### Get a config var
+`$ heroku -a jukeboxer-capstone config:get VAR_NAME`
+
+##### Set a config var
+`$ heroku -a jukeboxer-capstone config:set VAR_NAME=VAR_VALUE`
+
+##### Remove a config var
+`$ heroku -a jukeboxer-capstone config:unset VAR_NAME`
 
 #### Remote Deployment
-This repository is set up to deploy to a Heroku server whenever the master branch changes.  The `web` command in the Procfile will be run on the remote server.
+This repository is set up to deploy to a Heroku server whenever the master branch changes.  Heroku will install the dependencies and run the web command in the Procfile.
 
 #### Working Locally
 We are using heroku to manage our application configuration, which includes things such as our database connection.  Because of this, in order to run our app locally, we have to use the Procfile.  The commands in the Procfile are wrapped in the package.json file.
 
-Additionally, we need the .env file in this directory in order to access these application configuration locally.  How to set this up is explained in [quick-start](#quick-start) step 5.
+Additionally, we need the .env file in this directory in order to access these application configuration locally.  How to set this up is explained in [quick-start](#quick-start) step 5.  The .env file will need to be regenerated every time a new config var is added.
