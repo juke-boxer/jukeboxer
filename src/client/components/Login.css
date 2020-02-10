@@ -27,14 +27,20 @@ html, body {
   -ms-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
   max-width: 250px;
+  color: white;
   font-family: "Roboto";
   font-weight: 400;
+  text-shadow: 2px 2px 6px black;
 }
 
 b {
   color: white;
   font-size: 30px;
   font-family: "Roboto";
+}
+
+a {
+  color: white;
 }
 
 input {
@@ -57,6 +63,7 @@ input {
 }
 
 button {
+  margin: 8px auto;
   width: 100%;
   height: 39px;
   border-radius: 20px;
