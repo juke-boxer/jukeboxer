@@ -5,10 +5,14 @@
   "main": "src/server/index.js",
   "scripts": {
     "build": "webpack --mode production",
-    "start": "npm run build && node src/server/index.js",
-    "client": "webpack-dev-server --mode development --devtool inline-source-map --hot",
-    "server": "nodemon src/server/index.js",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "__start": "npm run build && node src/server/index.js",
+    "start": "heroku local start -p 8080",
+    "__client": "webpack-dev-server --mode development --devtool inline-source-map --hot",
+    "client": "heroku local client -p 3000",
+    "__server": "nodemon src/server/index.js",
+    "server": "heroku local server -p 8080",
+    "__dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "heroku local web -p 8080"
   },
   "repository": {
     "type": "git",

@@ -1,14 +1,7 @@
 # jukeboxer
+This is a capstone project by a team at the University of Arkansas. More info on our [capstone page](https://capstone-csce.uark.edu/fall-spring-2019-2020/teams-1-5/team-2-jukeboxer/)
 
-**Note that in /src there is a file called creds.js needed to run the program.
-The location of that file is on a need-to-know basis**.
-
-[![Build Status](https://travis-ci.org/crsandeep/simple-react-full-stack.svg?branch=master)](https://travis-ci.org/crsandeep/simple-react-full-stack)
-[![Greenkeeper badge](https://badges.greenkeeper.io/crsandeep/simple-react-full-stack.svg)](https://greenkeeper.io/)
-
-This is a boilerplate to build a full stack web application using React, Node.js, Express and Webpack. It is also configured with webpack-dev-server, eslint, prettier and babel.
-
-- [simple-react-full-stack](#simple-react-full-stack)
+- [jukeboxer](#jukeboxer)
   - [Introduction](#introduction)
     - [Development mode](#development-mode)
     - [Production mode](#production-mode)
@@ -24,6 +17,10 @@ This is a boilerplate to build a full stack web application using React, Node.js
     - [Concurrently](#concurrently)
     - [VSCode + ESLint + Prettier](#vscode--eslint--prettier)
       - [Installation guide](#installation-guide)
+    - [Heroku](#heroku)
+      - [Procfile](#procfile)
+      - [Remote Deployment](#remote-deployment)
+      - [Working Locally](#working-locally)
 
 ## Introduction
 
@@ -42,22 +39,29 @@ In the production mode, we will have only 1 server running. All the client side 
 ## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/crsandeep/simple-react-full-stack
+# 1. Clone the repository
+git clone https://github.com/juke-boxer/jukeboxer
 
-# Go inside the directory
-cd simple-react-full-stack
+# 2. Install heroku (if you haven't already)
+npm install -g heroku
 
-# Install dependencies
+# 3. Go inside the directory
+cd jukeboxer
+
+# 4. Install dependencies
 yarn (or npm install)
 
-# Start development server
+# 5. Set up the environment variables
+heroku config -a jukeboxer-capstone -s > .env
+(note: on Windows you have to do this in powershell)
+
+# 6. Start development server
 yarn dev (or npm run dev)
 
-# Build for production
+# 7. Build for production
 yarn build (or npm run build)
 
-# Start production server
+# 8. Start production server
 yarn start (or npm start)
 ```
 
@@ -224,17 +228,22 @@ This starts a server and listens on port 8080 for connections. The app responds 
 [Concurrently](https://github.com/kimmobrunfeldt/concurrently) is used to run multiple commands concurrently. I am using it to run the webpack dev server and the backend node server concurrently in the development environment. Below are the npm/yarn script commands used.
 
 ```javascript
-"client": "webpack-dev-server --mode development --devtool inline-source-map --hot",
-"server": "nodemon src/server/index.js",
-"dev": "concurrently \"npm run server\" \"npm run client\""
+  "__start": "npm run build && node src/server/index.js",
+  "start": "heroku local start -p 8080",
+  "__client": "webpack-dev-server --mode development --devtool inline-source-map --hot",
+  "client": "heroku local client -p 3000",
+  "__server": "nodemon src/server/index.js",
+  "server": "heroku local server -p 8080",
+  "__dev": "concurrently \"npm run server\" \"npm run client\"",
+  "dev": "heroku local dev -p 8080"
 ```
+Heroku is used to deploy our application & to store configuration details.  This is explained in more detail [here](#heroku).
 
 ### VSCode + ESLint + Prettier
 
 [VSCode](https://code.visualstudio.com/) is a lightweight but powerful source code editor. [ESLint](https://eslint.org/) takes care of the code-quality. [Prettier](https://prettier.io/) takes care of all the formatting.
 
 #### Installation guide
-
 1.  Install [VSCode](https://code.visualstudio.com/)
 2.  Install [ESLint extension](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 3.  Install [Prettier extension](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
@@ -248,3 +257,27 @@ This starts a server and listens on port 8080 for connections. The app responds 
     ```
 
 Above, we have modified editor configurations. Alternatively, this can be configured at the project level by following [this article](https://medium.com/@netczuk/your-last-eslint-config-9e35bace2f99).
+
+### Heroku
+
+Heroku is a Cloud platform as a service (PAAS), which means they provide everything necessary to deploy an application.
+
+#### Procfile
+The Procfile is how Heroku performs tasks necessary to build & deploy our application.  Below are the commands used.
+```
+start: npm run __start
+client: npm run __client
+server: npm run __server
+dev: npm run __dev
+web: npm install && npm run __start
+```
+We have set it up to where the package.json has the scripts with the '\_\_' prefix which the Procfile uses, and the ones without the '\_\_' prefix so that everything can be done inside the package.json file, which allows for better integration with VS Code.  Here's a really simple diagram explaining the workflow
+package.json __command -> Procfile command -> package.json command
+
+#### Remote Deployment
+This repository is set up to deploy to a Heroku server whenever the master branch changes.  The `web` command in the Procfile will be run on the remote server.
+
+#### Working Locally
+We are using heroku to manage our application configuration, which includes things such as our database connection.  Because of this, in order to run our app locally, we have to use the Procfile.  The commands in the Procfile are wrapped in the package.json file.
+
+Additionally, we need the .env file in this directory in order to access these application configuration locally.  How to set this up is explained in [quick-start](#quick-start) step 5.
