@@ -4,7 +4,7 @@
   "description": "Boilerplate to build a full stack web application using React, Node.js, Express and Webpack.",
   "main": "src/server/index.js",
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack --mode production --config ./webpack.config.js",
     "__start": "npm run build && node src/server/index.js",
     "start": "heroku local start -p 8080",
     "__client": "webpack-dev-server --mode development --devtool inline-source-map --hot",
