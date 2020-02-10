@@ -8,14 +8,35 @@ html, body {
     height: 100%;
   }
   
-  .container {
+  .split {
     height: 100%;
-    position: relative;
+    width: 60%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    overflow-x: hidden;
+    padding-top: 20px;
     background-image: url("../images/jukebox.jpg");
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center;
     background-attachment: fixed;
+  }
+
+  @media screen and (min-width:768px) {
+
+      .left, .right{
+        height:100vh;
+      }
+  }
+  .left {
+    left:-90px;
+    padding-right: px;
+  }
+
+  .right {
+    right:0;
+    padding-top: 40px;
   }
 
   .content {

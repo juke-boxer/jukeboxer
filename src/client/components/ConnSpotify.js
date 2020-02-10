@@ -88,7 +88,7 @@ class Playlist extends Component {
     return (
       <div style={{...defaultStyle, display: 'inline-block', width: "25%"}}>
         <img />
-        <h3>Playlist Name</h3>
+        <h3>{this.props.name}</h3>
         <ul><li>Song 1</li><li>Song 2</li><li>Song 3</li></ul>
       </div>
     );
@@ -110,35 +110,43 @@ export default class ConnSpotify extends Component {
   }
   render() {
     return (
-      <div className="container"> 
+
+      <div className="split"> 
         {/* <h1 style={{fontSize: '30px',color: 'white'}}>Spotify Info</h1> */}
-        <img src={logo} />
-        <div className="content">
-          <form onSubmit={this.handleSubmit}>
-            <b>JukerBoxer</b>
-            <input value={this.username} onChange={e => this.setSpotUserName(e.target.value)} type='text' placeholder="Spotify UserName" />
-            <input value={this.username} onChange={e => this.setSpotPasswordName(e.target.value)} type='password' placeholder="Spotify Password" />
-          </form>
+            <div class = "split left">
+              <img src={logo} />
+              <div className="content">
+                <form onSubmit={this.handleSubmit}>
+                  <b>JukerBoxer</b>
+                  <input value={this.username} onChange={e => this.setSpotUserName(e.target.value)} type='text' placeholder="Spotify UserName" />
+                  <input value={this.username} onChange={e => this.setSpotPasswordName(e.target.value)} type='password' placeholder="Spotify Password" />
+                </form>
+              </div>
+
+
+            <div class = "split right">
+              <div className="spotData">
+                {this.state.serverData.user ?
+                <div>
+                  <h1 style={{fontSize: '30px',color: 'white'}}>
+                    {this.state.serverData.user.name}'s Playlist
+                  </h1>
+                  <PlaylistCounter playlists={this.state.serverData.user.playlists}/>
+                  <TimeCount playlists={this.state.serverData.user.playlists}/>
+                  <Filter/>
+                  {
+                    this.state.serverData.user.playlists.map(playlist => 
+                      <Playlist name={playlist.name}/>  
+                  )}
+                  <Playlist/>
+                  <Playlist/>
+                  <Playlist/>
+                  <Playlist/>
+                </div> : <h1>'Loading...'</h1>
+                }
+              </div>
+          </div>
         </div>
-
-        <div className="spotData">
-          {this.state.serverData.user ?
-          <div>
-            <h1 style={{fontSize: '30px',color: 'white'}}>
-              {this.state.serverData.user.name}'s Playlist
-            </h1>
-            <PlaylistCounter playlists={this.state.serverData.user.playlists}/>
-            <TimeCount playlists={this.state.serverData.user.playlists}/>
-
-            <Filter/>
-            <Playlist/>
-            <Playlist/>
-            <Playlist/>
-            <Playlist/>
-          </div> : <h1>'Loading...'</h1>
-          }
-        </div>
-
       </div>
     );
   }  
