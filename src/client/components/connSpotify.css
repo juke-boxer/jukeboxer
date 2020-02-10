@@ -1,0 +1,78 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  
+  #root {
+    height: 100%;
+  }
+  
+  .container {
+    height: 100%;
+    position: relative;
+    background-image: url("../images/jukebox.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-attachment: fixed;
+  }
+
+  .content {
+    margin: 0;
+    padding: 20px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -ms-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    max-width: 250px;
+    font-family: "Roboto";
+    font-weight: 400;
+    padding: 15px;
+  }
+
+  b {
+    color: white;
+    font-size: 30px;
+    font-family: "Roboto";
+  }
+  
+  img {
+    position: relative;
+    margin-top: 25px;
+    padding: 5px;
+    border-radius: 15px;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 12px;
+    margin: 8px 0;
+    border-radius: 20px;
+    display: inline-block;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  
+  input {
+    font-size: 16px;
+    font-family: "Roboto";
+  }
+  
+  *:focus {
+    outline: none;
+  }
+  
+  button {
+    width: 100%;
+    height: 39px;
+    border-radius: 20px;
+    font-size: 16px;
+    font-family: "Roboto";
+  }
+
+  .spotData {
+    position: absolute;
+    margin-left: 70px;
+  }

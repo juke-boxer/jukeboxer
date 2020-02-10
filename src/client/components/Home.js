@@ -5,11 +5,17 @@ export default class Home extends Component {
     this.props.history.push('/login');
   }
 
+  handleClickSpot = () => {
+    this.props.history.push('/connSpotify');
+  }
+
+
   render() {
     return (
       <div>
         <p>HOME PAGE!</p>
         <button type="button" onClick={this.handleClick}>Login</button>
+        <button type="spotButton" onClick={this.handleClickSpot}>ConnSpotify</button>
       </div>
     );
   }
