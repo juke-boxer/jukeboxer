@@ -66,7 +66,7 @@ class TimeCount extends Component {
     }, 0)
     return (
       <div style={{...defaultStyle, width: "40%", display: 'inline-block'}}>
-        <h2>Length: {Math.round(totalTime/1000)} min</h2>
+        <h2>Min: {Math.round(totalTime/1000)}</h2>
       </div>
     );
   }
@@ -138,10 +138,10 @@ export default class ConnSpotify extends Component {
                     this.state.serverData.user.playlists.map(playlist => 
                       <Playlist name={playlist.name}/>  
                   )}
+                  {/* <Playlist/>
                   <Playlist/>
                   <Playlist/>
-                  <Playlist/>
-                  <Playlist/>
+                  <Playlist/> */}
                 </div> : <h1>'Loading...'</h1>
                 }
               </div>

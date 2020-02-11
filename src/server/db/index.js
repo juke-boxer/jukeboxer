@@ -1,7 +1,6 @@
 const { Pool } = require('pg');
 
-// credentials are stored in src/creds.js, but that is not included in source control
-const { dbConnString } = require('../../creds');
+const dbConnString = process.env.DATABASE_URL;
 
 const pool = new Pool({
   connectionString: dbConnString,
