@@ -1,11 +1,15 @@
+/* eslint-disable no-alert */
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import './Login.css';
 
 export default () => {
+  document.title = 'Register';
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const history = useHistory();
 
   const validateForm = username.length > 0 && password.length > 0 && confirmPassword.length > 0;
 
@@ -24,8 +28,11 @@ export default () => {
       },
       body: JSON.stringify({ username, password }),
     })
-      .then(res => res.text())
-      .then(data => alert(data.message));
+      .then(res => res.json())
+      .then((data) => {
+        alert(data.result);
+        history.push('/login');
+      });
   };
 
   return (
