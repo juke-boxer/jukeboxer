@@ -1,5 +1,8 @@
+/* eslint-disable no-alert */
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { setSession, getSession } from '../Auth';
+import logo from '../images/logo.png';
 import './Login.css';
 
 export default class Login extends Component {
@@ -9,6 +12,13 @@ export default class Login extends Component {
       username: '',
       password: ''
     };
+
+    document.title = 'Login';
+
+    const session = getSession();
+    if (session !== undefined) {
+      this.props.history.push('/protected', { username: session.username });
+    }
   }
 
   validateForm = () => {
@@ -35,8 +45,15 @@ export default class Login extends Component {
       },
       body: JSON.stringify(this.state),
     })
-      .then(res => res.text())
-      .then(data => alert(data));
+      .then(res => res.json())
+      .then((data) => {
+        if (data.result === 'success') {
+          setSession(data.token);
+          this.props.history.push('/protected');
+        } else {
+          alert('Incorrect Login');
+        }
+      });
   }
 
   render() {
@@ -44,7 +61,7 @@ export default class Login extends Component {
       <div className="container">
         <div className="content">
           <form onSubmit={this.handleSubmit}>
-            <b>Jukeboxer</b>
+            <img className="logo" alt="logo" src={logo} />
             <input value={this.username} onChange={e => this.setUsername(e.target.value)} type="text" placeholder="Username" />
             <input value={this.password} onChange={e => this.setPassword(e.target.value)} type="password" placeholder="Password" />
             <button type="submit" disabled={!this.validateForm()}>Login</button>
