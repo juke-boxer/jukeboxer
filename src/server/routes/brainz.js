@@ -19,7 +19,13 @@ async function findSong(req, res, next) {
     release: album !== undefined ? album : '',
     recording: song
   });
-  res.send(songSearchResults);
+  let result;
+  try {
+    result = songSearchResults.recordings[0].releases[0];
+  } catch {
+      result = 'song is not in musicbrainz database';
+  }
+  res.send({"result": result});
   return next();
 }
 
