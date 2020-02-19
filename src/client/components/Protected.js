@@ -9,6 +9,10 @@ export default () => {
 
   const history = useHistory();
 
+  const redirect = (path) => {
+    history.push(path);
+  };
+
   const logout = () => {
     logOut();
     history.push('/');
@@ -19,6 +23,7 @@ export default () => {
       <div className="content">
         <img className="logo" alt="logo" src={logo} />
         <b>{`Welcome Back, ${getSession().username}`}</b>
+        <button type="button" onClick={() => redirect('/spotify-test')}>SPOTIFY TIME</button>
         <button type="button" onClick={logout}>Logout</button>
       </div>
     </div>
