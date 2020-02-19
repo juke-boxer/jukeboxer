@@ -6,6 +6,7 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import Protected from './components/Protected';
+import SpotifyTest from './components/SpotifyTest';
 import { getSession } from './Auth';
 import './app.css';
 
@@ -24,6 +25,7 @@ export default () => (
       <Route path="/" component={Home} exact />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <PrivateRoute path="/spotify-test" component={SpotifyTest} />
       <PrivateRoute path="/protected" component={Protected} />
       <Route component={Home} />
     </Switch>

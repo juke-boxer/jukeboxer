@@ -4,6 +4,7 @@ const router = require('express-promise-router')();
 const path = require('path');
 const userRoutes = require('./routes/users');
 const brainzRoutes = require('./routes/brainz');
+const spotifyRoutes = require('./routes/spotify');
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.static('dist'));
 
 router.use('/api/users', userRoutes);
 router.use('/api/brainz', brainzRoutes);
+router.use('/api/spotify', spotifyRoutes);
 
 router.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
