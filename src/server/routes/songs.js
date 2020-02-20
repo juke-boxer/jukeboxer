@@ -16,6 +16,17 @@ const mbApi = new MusicBrainzApi({
   appMail: 'armv32020@gmail.com'
 });
 
+async function findSong(req, res, next) {
+  const { artist, song } = req.body;
+  const { rows } = await db.query('SELECT * FROM songs WHERE artist=$1 AND title=$2', [artist, song])
+    .catch((err) => {
+      console.log(err);
+      res.send({ result: err });
+      return next();
+    });
+  res.send({ result: rows.length > 0 });
+  return next();
+}
 
 // If a song is not found in the songs table, fetch the song data using
 // musicbrainz and acousticbrainz
@@ -63,7 +74,7 @@ async function createSong(req, res, next) {
         res.send({ result: err });
         return next();
       });
-    res.send({ result: 'song was succesfully added to the database, but was not in acousticbrainz database' });
+    res.send({ result: 'song was successfully added to the database, but was not in acousticbrainz database' });
     return next();
   }
 
@@ -89,5 +100,5 @@ async function createSong(req, res, next) {
 }
 
 router.post('/createSong', createSong);
-// router.post('/findSong', findSong);
+router.post('/findSong', findSong);
 module.exports = router;
