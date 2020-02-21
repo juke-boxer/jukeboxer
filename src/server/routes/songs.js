@@ -40,10 +40,7 @@ async function findSong(req, res, next) {
   return next();
 }
 
-// If a song is not found in the songs table, fetch the song data using
-// musicbrainz and acousticbrainz
-async function createSong(req, res, next) {
-  const { artist, album, song } = req.body;
+async function getMusicBrainzData(artist, album, song) {
   const MusicBrainzSearchResults = await mbApi.search('recording', {
     artist: artist !== undefined ? artist : '',
     release: album !== undefined ? album : '',
@@ -56,9 +53,44 @@ async function createSong(req, res, next) {
   } catch {
     MusicbrainzResult = false;
   }
+  return MusicbrainzResult;
+}
 
+async function getAcousticBrainzData(MusicbrainzResult) {
+  // We need the musicbrainz id to make calls to acousticbrainz
+  const MusicbrainzId = MusicbrainzResult.id;
+  const AcousticBrainzResult = await fetch(`${acousticbrainz}/api/v1/${MusicbrainzId}/low-level`)
+    .then(resp => resp.json())
+    .catch((err) => {
+      console.log(err);
+    });
+  return AcousticBrainzResult;
+}
+
+function extractDataFromAcousticBrainz(AcousticBrainzResult) {
+  const { album, metadata, tonal, rhythm } = AcousticBrainzResult;
+  const { chords_key, chords_scale } = tonal;
+  const { tags } = metadata;
+  const { bpm, danceability } = rhythm;
+  const date = tags.date[0];
+  const genre = tags.genre[0];
+  const misc_data = {
+    album, chords_scale, chords_key, danceability, bpm, date, genre
+  };
+  return misc_data;
+}
+
+// If a song is not found in the songs table, fetch the song data using
+// MusicBrainz and AcousticBrainz
+// Note that there are three possibilities for whatever song we are creating:
+// 1. The song is on the streaming service we are importing from and not on MusicBrainz
+// 2. The song is the streaming service and MusicBrainz but not on AcousticBrainz
+// 3. The song is on the streaming service, MusicBrainz, and AcousticBrainz
+async function createSong(req, res, next) {
+  const { artist, album, song } = req.body;
+  const MusicbrainzResult = await getMusicBrainzData(artist, album, song);
   if (!MusicbrainzResult) {
-    const noMusicBrainzDataInsert = await db.query('INSERT INTO songs (title, artist, misc_data) VALUES ($1, $2, $3)', [song, artist, { album }])
+    await db.query('INSERT INTO songs (title, artist, misc_data) VALUES ($1, $2, $3)', [song, artist, { album }])
       .catch((err) => {
         console.log(err);
         res.send({ result: err });
@@ -68,19 +100,13 @@ async function createSong(req, res, next) {
     return next();
   }
 
-  // We need the musicbrainz id to make calls to acousticbrainz
-  const MusicbrainzId = MusicbrainzResult.id;
-  const AcousticBrainzResult = await fetch(`${acousticbrainz}/api/v1/${MusicbrainzId}/low-level`)
-    .then(resp => resp.json())
-    .catch((err) => {
-      console.log(err);
-      res.send({ result: err });
-      return next();
-    });
-
-  const DBRow = [MusicbrainzId, song, artist, { album }];
+  console.log(MusicbrainzResult);
+  const AcousticBrainzResult = await getAcousticBrainzData(MusicbrainzResult);
+  AcousticBrainzResult.album = album;
+  console.log(AcousticBrainzResult);
+  const DBRow = [MusicbrainzResult.id, song, artist, { album }];
   if (AcousticBrainzResult.message === 'Not found') {
-    const noAcousticBrainzDataInsert = await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4)', DBRow)
+    await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4)', DBRow)
       .catch((err) => {
         console.log(err);
         res.send({ result: err });
@@ -90,18 +116,8 @@ async function createSong(req, res, next) {
     return next();
   }
 
-  const { metadata, tonal, rhythm } = AcousticBrainzResult;
-  const { chords_key, chords_scale } = tonal;
-  const { tags } = metadata;
-  const { danceability } = rhythm;
-  const bpm = tags.bpm[0];
-  const date = tags.date[0];
-  const genre = tags.genre[0];
-  const misc_data = {
-    album, chords_scale, chords_key, danceability, bpm, date, genre
-  };
-  DBRow[3] = misc_data;
-  const noLoveDeepWebInsert = await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4)', DBRow)
+  DBRow[3] = extractDataFromAcousticBrainz(AcousticBrainzResult);
+  await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4)', DBRow)
     .catch((err) => {
       console.log(err);
       res.send({ result: err });
