@@ -16,6 +16,18 @@ const mbApi = new MusicBrainzApi({
   appMail: 'armv32020@gmail.com'
 });
 
+async function getSongById(req, res, next) {
+  const { id } = req.params;
+  const { rows } = await db.query('SELECT * FROM songs WHERE songid=$1', [id])
+    .catch((err) => {
+      console.log(err);
+      res.send({ result: err });
+      return next();
+    });
+  res.send({ result: rows[0] });
+  return next();
+}
+
 async function findSong(req, res, next) {
   const { artist, song } = req.body;
   const { rows } = await db.query('SELECT * FROM songs WHERE artist=$1 AND title=$2', [artist, song])
@@ -99,6 +111,7 @@ async function createSong(req, res, next) {
   return next();
 }
 
+router.get('/getSongById/:id', getSongById);
 router.post('/createSong', createSong);
 router.post('/findSong', findSong);
 module.exports = router;
