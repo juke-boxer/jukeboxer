@@ -84,7 +84,7 @@ function extractDataFromAcousticBrainz(AcousticBrainzResult) {
 // MusicBrainz and AcousticBrainz
 // Note that there are three possibilities for whatever song we are creating:
 // 1. The song is on the streaming service we are importing from and not on MusicBrainz
-// 2. The song is the streaming service and MusicBrainz but not on AcousticBrainz
+// 2. The song is on the streaming service and MusicBrainz but not on AcousticBrainz
 // 3. The song is on the streaming service, MusicBrainz, and AcousticBrainz
 async function createSong(req, res, next) {
   const { artist, album, song } = req.body;
