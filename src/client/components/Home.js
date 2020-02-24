@@ -7,20 +7,20 @@ export default class Home extends Component {
     document.title = 'Jukeboxer';
   }
 
-  handleClick = () => {
-    this.props.history.push('/login');
+  handleClick = (nav_bar_url) => {
+    this.props.history.push(nav_bar_url);
   }
 
   render() {
     return (
       <div className="container">
         <div className="navbar">
-          <a href="" onClick={this.handleClick}>Login</a>
-          <a>More NavBar Things</a>
+          <a href="" onClick={this.handleClick('login')}>Login</a>
+          <a href="" onclick={this.handleClick('spotify-test')}>Spotify</a>
         </div>
         <div className="home-content">
-            <button><a href="https://www.spotify.com/us/">Spotify</a></button>
-            <button>Youtube Music</button>
+          <a href="https://jukeboxer-capstone.herokuapp.com/spotify-test/"><button>Spotify</button></a>
+          <a href="https://music.youtube.com/"><button>Youtube Music</button></a>
         </div>
       </div>
     );
