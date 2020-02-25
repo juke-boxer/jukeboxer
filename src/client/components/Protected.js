@@ -23,7 +23,7 @@ export default () => {
       <div className="content">
         <img className="logo" alt="logo" src={logo} />
         <b>{`Welcome Back, ${getSession().username}`}</b>
-        <button type="button" onClick={() => redirect('/spotify-test')}>SPOTIFY TIME</button>
+        <button type="button" onClick={() => { window.location.href = `../api/spotify/login?user_id=${getSession().userid}`; }}>Connect to Spotify</button>
         <button type="button" onClick={logout}>Logout</button>
       </div>
     </div>

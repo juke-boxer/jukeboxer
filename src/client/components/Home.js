@@ -15,8 +15,8 @@ export default class Home extends Component {
     return (
       <div className="container">
         <div className="navbar">
-          <a href="" onClick={this.handleClick('login')}>Login</a>
-          <a href="" onclick={this.handleClick('spotify-test')}>Spotify</a>
+          <a href="" onClick={() => { this.handleClick('login')} }>Login</a>
+          <a href="" onClick={() => { this.handleClick('spotify-test')} }>Spotify</a>
         </div>
         <div className="home-content">
           <a href="https://jukeboxer-capstone.herokuapp.com/spotify-test/"><button>Spotify</button></a>
