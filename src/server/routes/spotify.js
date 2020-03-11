@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const db = require('../db');
 
 const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
-
+console.log(redirect_uri);
 const queryString = params => Object.keys(params).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
 
 router.get('/login', async (req, res) => {
@@ -47,18 +47,31 @@ router.get('/callback', (req, res) => {
         const refreshToken = response.refresh_token;
 
         // Get user playlists
-        fetch('https://api.spotify.com/v1/me/playlists', {
+        let { items } = fetch('https://api.spotify.com/v1/me/playlists', {
           headers: {
-            'Authorization': `Bearer ${accessToken}`
+            Authorization: `Bearer ${accessToken}`
           }
         })
-          .then(playlists => playlists.json())
-          .then((playlists) => {
-            db.query('UPDATE users SET spotify_playlists=$1 WHERE userid=$2', [playlists, userID]);
+          .then(playlists => playlists.json());
 
-            //console.log(`${process.env.FRONTEND_URI}/spotify-test?${queryString(result)}`);
-            res.redirect(`${process.env.FRONTEND_URI}/spotify-test`);
+        const tasks = items.map((item) => {
+          const playlistUrl = item.tracks.href;
+          return fetch(playlistUrl, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }).then((x) => {
+            x.json();
           });
+        });
+
+        let results = Promise.all(tasks).catch((err) => {
+          console.log(err);
+        });
+
+        
+        console.log(results);
+        res.redirect(`${process.env.FRONTEND_URI}/spotify-test`);
       }
     });
 });
