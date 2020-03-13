@@ -22,7 +22,7 @@ router.get('/login', async (req, res) => {
   res.redirect(`https://accounts.spotify.com/authorize?${queryString(params)}`);
 });
 
-router.get('/callback', (req, res) => {
+router.get('/callback', async (req, res, next) => {
   const code = req.query.code || null;
   const userID = req.query.state;
 
@@ -33,53 +33,91 @@ router.get('/callback', (req, res) => {
   params.append('client_id', process.env.SPOTIFY_CLIENT_ID);
   params.append('client_secret', process.env.SPOTIFY_CLIENT_SECRET);
 
-  fetch('https://accounts.spotify.com/api/token', {
+  let tokens;
+  try {
+    tokens = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      body: params,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+      .then(response => response.json())
+      .then((response) => {
+        if (response.error !== undefined) {
+          console.log(`Error: ${response.error} Desc: ${response.error_description}`);
+        } else {
+          return {
+            spotifyAccessToken: response.access_token,
+            spotifyRefreshtoken: response.refresh_token
+          };
+        }
+      });
+  } catch (err) {
+    console.log(err);
+    res.end('fail!');
+    return next();
+  }
+  console.log(tokens);
+
+  db.query('UPDATE users SET misc_data=misc_data::jsonb || $1::jsonb WHERE userid=$2',
+    [JSON.stringify(tokens), userID]).then((x) => {
+    console.log(x);
+  }).catch((err) => {
+    console.log(err);
+  });
+
+  fetch(`${process.env.FRONTEND_URI}/api/spotify/importPlaylists`, {
     method: 'POST',
-    body: params,
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-  })
-    .then(response => response.json())
-    .then((response) => {
-      if (response.error !== undefined) {
-        console.log(`Error: ${response.error} Desc: ${response.error_description}`);
-      } else {
-        const accessToken = response.access_token;
-        const refreshToken = response.refresh_token;
+    body: {
+      access_token: tokens.spotifyAccessToken,
+      user_id: userID
+    }
+  }).then((x) => {
+    console.log(x);
+  }).catch((err) => {
+    console.log(err);
+  });
 
-        // Get user playlists
-        let { items } = fetch('https://api.spotify.com/v1/me/playlists', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        })
-          .then(playlists => playlists.json());
-
-        const tasks = items.map((item) => {
-          const playlistUrl = item.tracks.href;
-          return fetch(playlistUrl, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }).then((x) => {
-            x.json();
-          });
-        });
-
-        let results = Promise.all(tasks).catch((err) => {
-          console.log(err);
-        });
-
-        
-        console.log(results);
-        res.redirect(`${process.env.FRONTEND_URI}/spotify-test`);
-      }
-    });
+  res.redirect(`${process.env.FRONTEND_URI}/playlists`);
 });
 
-router.get('/getPlaylists', async (req, res) => {
-  const userID = req.query.user_id;
-  const { rows } = await db.query('SELECT spotify_playlists FROM users WHERE userid=$1', [userID]);
-  res.json(rows[0].spotify_playlists);
+router.post('/importPlaylists', async (req, res, next) => {
+  const { access_token, user_id } = req.body;
+  let playlists;
+  try {
+    playlists = await fetch('https://api.spotify.com/v1/me/playlists', {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    }).then((resp) => {
+      resp.json();
+    });
+  } catch (err) {
+    console.log(err);
+  }
+  console.log(playlists);
+
+  let playlistsData;
+  try {
+    playlistsData = Promise.all(playlists.items.map((item) => {
+      const { tracks } = item;
+      const url = tracks.href;
+      return fetch(url, {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      }).then((resp) => {
+        resp.json();
+      });
+    }));
+  } catch (err) {
+    console.log(err);
+    res.end('fail!');
+    return next();
+  }
+
+  console.log(playlistsData);
+  res.end('success!');
+  return next();
 });
 
 module.exports = router;

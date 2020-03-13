@@ -4,7 +4,7 @@ import { getSession } from '../Auth';
 import fetch from 'node-fetch';
 
 export default () => {
-  document.title = 'Spotify Test';
+  document.title = 'Playlists';
 
   const history = useHistory();
   const [playlists, setPlaylists] = useState([]);
