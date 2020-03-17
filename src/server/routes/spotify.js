@@ -45,28 +45,24 @@ router.get('/callback', async (req, res, next) => {
         console.log(`Error: ${response.error} Desc: ${response.error_description}`);
         throw new Error(response.error);
       }
-      console.log(response);
       return {
         spotifyAccessToken: response.access_token,
         spotifyRefreshToken: response.refresh_token
       };
     }).catch((err) => {
       console.log(err);
-      process.exit(1);
+      res.status(500).json({ error: err });
+      return next();
     });
 
-  console.log('tokens v1');
-  console.log(tokens);
   db.query('UPDATE users SET misc_data=misc_data::jsonb || $1::jsonb WHERE userid=$2',
-    [JSON.stringify(tokens), userID]).then((x) => {
-    console.log(x);
-  }).catch((err) => {
-    console.log(err);
-    process.exit(1);
-  });
+    [JSON.stringify(tokens), userID])
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+      return next();
+    });
 
-  console.log('tokens v2');
-  console.log(tokens.spotifyAccessToken);
   fetch(`${process.env.FRONTEND_URI}/api/spotify/importPlaylists`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -78,15 +74,16 @@ router.get('/callback', async (req, res, next) => {
     console.log(resp);
   }).catch((err) => {
     console.log(err);
-    process.exit(1);
+    res.status(500).json({ error: err });
+    return next();
   });
 
   res.redirect(`${process.env.FRONTEND_URI}/playlists`);
 });
 
+
 router.post('/importPlaylists', async (req, res, next) => {
   const { access_token, user_id } = req.body;
-  console.log(`access_token: ${access_token}`);
   const playlistsData = await fetch('https://api.spotify.com/v1/me/playlists', {
     headers: {
       Authorization: `Bearer ${access_token}`
@@ -97,17 +94,26 @@ router.post('/importPlaylists', async (req, res, next) => {
         console.log(resp.error);
         throw new Error(resp.error);
       }
-      console.log(resp);
       return resp.items;
     }).catch((err) => {
       console.log(err);
-      process.exit(1);
+      res.status(500).json({ error: err });
+      return next();
     });
 
-  // fs.writeFileSync('spotify_playlists_test.json', playlistsData);
-  /*
-  const playlistsDetails = await Promise.all(playlistsData.items.map((item) => {
-    const { tracks } = item;
+  await Promise.all(playlistsData.map(p => db.query('INSERT INTO playlists (ownerid, title, description, misc_data) VALUES ($1, $2, $3, $4) RETURNING playlistid',
+    [user_id, p.name, p.description, JSON.stringify({ on_spotify: true })])))
+    .then((result) => {
+      const { rows } = result;
+      return rows[0].playlistid;
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+    });
+
+  const playlistsDetails = await Promise.all(playlistsData.map(async (item) => {
+    const { name, tracks } = item;
     const url = tracks.href;
     return fetch(url, {
       headers: {
@@ -115,30 +121,54 @@ router.post('/importPlaylists', async (req, res, next) => {
       }
     }).then(resp => resp.json())
       .then((resp) => {
-        if (resp.error) {
+        if (resp.status === 500) {
           console.log(resp.error);
-          process.exit(1);
+          res.status(500).json(resp.error);
+          return next();
         }
-        resp.on_spotify = true;
+        resp.playlist = name;
         return resp;
       }).catch((err) => {
         console.log(err);
-        process.exit(1);
+        res.status(500).json({ error: err });
+        return next();
       });
   }));
-  */
 
-  /*
-  db.query('INSERT INTO playlists VALUES (owner, misc_data) $1 $2',
-    [user_id, playlistsDetails]).then((x) => {
-    console.log(x);
-  }).catch((err) => {
+  await Promise.all(playlistsDetails.map((p) => {
+    db.query('UPDATE playlists SET misc_data=misc_data::jsonb || $2::jsonb WHERE title=$1',
+      [p.playlist, JSON.stringify({ playlistsDetails })]);
+  }))
+  .catch((err) => {
     console.log(err);
-    process.exit(1);
-  });
-  */
-  res.end('success!');
+    res.status(500).json({ error: err });
+    return next();
+  })
+
+  fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      access_token,
+      user_id,
+      playlist_id: playlistId
+    })
+  })
+    .then((resp) => {
+      if (resp.error) {
+        res.status(500).json(resp.error);
+        return next();
+      }
+    }).catch((err) => {
+      res.status(500).json(err);
+      return next();
+    });
+
+  res.json({ message: 'success!' });
   return next();
 });
+
 
 module.exports = router;
