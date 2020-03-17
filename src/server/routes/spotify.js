@@ -139,11 +139,11 @@ router.post('/importPlaylists', async (req, res, next) => {
     db.query('UPDATE playlists SET misc_data=misc_data::jsonb || $2::jsonb WHERE title=$1',
       [p.playlist, JSON.stringify({ playlistsDetails })]);
   }))
-  .catch((err) => {
-    console.log(err);
-    res.status(500).json({ error: err });
-    return next();
-  })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+      return next();
+    });
 
   fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
     method: 'POST',
