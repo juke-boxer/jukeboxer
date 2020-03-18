@@ -2,7 +2,7 @@ const fetch = require('node-fetch');
 const router = require('express-promise-router')();
 const { MusicBrainzApi } = require('musicbrainz-api');
 const db = require('../db');
-
+const fs = require('fs');
 const acousticbrainz = 'https://acousticbrainz.org';
 
 const mbApi = new MusicBrainzApi({
@@ -44,9 +44,7 @@ async function findSong(req, res, next) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ artist, song })
-    }).then((resp) => {
-      return resp.json();
-    }).then((json) => {
+    }).then(resp => resp.json()).then((json) => {
       const { id } = json;
       return id;
     }).catch((err) => {
@@ -160,48 +158,50 @@ async function createSong(req, res, next) {
   return next();
 }
 
+// import Songs from a track
 router.post('/importSongs', async (req, res, next) => {
-  const { playlist_id, access_token, user_id } = req.body;
-  const playlistDetails = await db.query("SELECT misc_data->'playlistDetails' FROM playlists where ")
-  await Promise.all(playlistsDetails.map(async (trackList) => {
-    const { playlist, items } = trackList;
-    console.log(playlist);
-    const songIds = await Promise.all(items.map(async (item) => {
-      const { track } = item;
-      const { artists, name } = track;
-      artist = artists[0].name;
-      const songId = await fetch(`${process.env.FRONTEND_URI}/api/songs/findSong`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          song: name,
-          artist
-        })
+  const { playlistId } = req.body;
+  const playlistTracks = await db.query("SELECT misc_data->'tracks' AS tracks FROM playlists where playlistid=$1",
+    [playlistId])
+    .then((x) => {
+      const { rows } = x;
+      const { tracks } = rows[0];
+      return tracks;
+    }).catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+      return next();
+    });
+
+  const songIds = await Promise.all(playlistTracks.items.map(async (item) => {
+    const { track } = item;
+    const { artists, name } = track;
+    artist = artists[0].name;
+    const songId = await fetch(`${process.env.FRONTEND_URI}/api/songs/findSong`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        song: name,
+        artist
       })
-        .then(resp => resp.json())
-        .then((json) => {
-          const { id } = json;
-          return id;
-        });
-      console.log(`songId: ${songId}`);
-      return songId;
-    })).then(result => result).catch((err) => {
+    })
+      .then(resp => resp.json())
+      .then((json) => {
+        const { id } = json;
+        return id;
+      });
+    return songId;
+  }))
+    .then(result => result)
+    .catch((err) => {
       console.log(err);
       res.status(500).json({ error: err });
       return next();
     });
-    console.log(`songIds: ${songIds}`);
-    db.query('UPDATE playlists WHERE title=$1 AND ownerid=$2 SET songs_list=$3',
-      [playlist, user_id, `{${songIds.join(',')}}`]);
-    return 'success!';
-  })).catch((err) => {
-    console.log(err);
-    res.json({ error: err });
-    return next();
-  });
-  res.json({ result: 'success!' });
+  console.log(songIds);
+  res.json({ playlistId, songIds });
   return next();
 });
 router.get('/getSongById/:id', getSongById);
