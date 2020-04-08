@@ -150,38 +150,37 @@ router.post('/importPlaylists', async (req, res, next) => {
     return next();
   });
 
-  const songsIds = await Promise.all(playlistsTracks.map(async (t) => {
-    return fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        access_token,
-        user_id,
-        playlistId: t.jukeboxer_id
-      })
+  const songsIds = await Promise.all(playlistsTracks.map(async t => fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      access_token,
+      user_id,
+      playlistId: t.jukeboxer_id
     })
-      .then((resp) => {
-        if (resp.error) {
-          console.log(resp.error);
-          res.status(500).json(resp.error);
-          return next();
-        }
-        return resp.json();
-      })
-      .catch((err) => {
-        console.log(err);
-        res.status(500).json(err);
+  })
+    .then((resp) => {
+      if (resp.error) {
+        console.log(resp.error);
+        res.status(500).json(resp.error);
         return next();
-      });
-  }));
+      }
+      return resp.json();
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json(err);
+      return next();
+    })));
   console.log(songsIds);
 
   await Promise.all(songsIds.map((songsArrays) => {
     const { playlistId, songIds } = songsArrays;
     const pgArray = `{${join(songIds, ',')}}`;
-    return db.query('UPDATE playlists SET songs_list=$1 WHERE playlistid=$2', [pgArray, playlistId])
+    return db.query("UPDATE playlists SET songs_list=$1, misc_data=misc_data::jsonb-'tracks' WHERE playlistid=$2",
+      [pgArray, playlistId])
       .then((x) => {
         console.log(x);
       }).catch((err) => {
