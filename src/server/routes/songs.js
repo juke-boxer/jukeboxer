@@ -84,21 +84,6 @@ async function getAcousticBrainzData(MusicbrainzResult) {
   return AcousticBrainzResult;
 }
 
-function extractDataFromAcousticBrainz(AcousticBrainzResult) {
-  const {
-    album, metadata, tonal, rhythm
-  } = AcousticBrainzResult;
-  const { chords_key, chords_scale } = tonal;
-  const { tags } = metadata;
-  const { bpm, danceability } = rhythm;
-  const date = tags.date[0];
-  const genre = tags.genre[0];
-  const misc_data = {
-    album, chords_scale, chords_key, danceability, bpm, date, genre
-  };
-  return misc_data;
-}
-
 // If a song is not found in the songs table, fetch the song data using
 // MusicBrainz and AcousticBrainz
 // Note that there are three possibilities for whatever song we are creating:
@@ -143,7 +128,7 @@ async function createSong(req, res, next) {
   }
 
   // 3. The song is on the streaming service, MusicBrainz, and AcousticBrainz
-  DBRow[3] = extractDataFromAcousticBrainz(AcousticBrainzResult);
+  DBRow[3] = AcousticBrainzResult;
   const id = await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4) RETURNING songid', DBRow)
     .then((result) => {
       const { rows } = result;

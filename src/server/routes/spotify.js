@@ -1,8 +1,7 @@
 const router = require('express-promise-router')();
 const fetch = require('node-fetch');
 const { URLSearchParams } = require('url');
-const jwt = require('jsonwebtoken');
-const fs = require('fs');
+const join = require('lodash.join');
 const qs = require('querystring');
 const db = require('../db');
 
@@ -152,7 +151,7 @@ router.post('/importPlaylists', async (req, res, next) => {
   });
 
   const songsIds = await Promise.all(playlistsTracks.map(async (t) => {
-    await fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
+    return fetch(`${process.env.FRONTEND_URI}/api/songs/importSongs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -169,8 +168,9 @@ router.post('/importPlaylists', async (req, res, next) => {
           res.status(500).json(resp.error);
           return next();
         }
-        return resp;
-      }).catch((err) => {
+        return resp.json();
+      })
+      .catch((err) => {
         console.log(err);
         res.status(500).json(err);
         return next();
@@ -178,19 +178,22 @@ router.post('/importPlaylists', async (req, res, next) => {
   }));
   console.log(songsIds);
 
-  /*
   await Promise.all(songsIds.map((songsArrays) => {
     const { playlistId, songIds } = songsArrays;
-    db.query('UPDATE playlists SET songsList=$1 WHERE playlistid=$2', [`{${songIds.join(',')}}`, playlistId])
+    const pgArray = `{${join(songIds, ',')}}`;
+    return db.query('UPDATE playlists SET songs_list=$1 WHERE playlistid=$2', [pgArray, playlistId])
       .then((x) => {
         console.log(x);
+      }).catch((err) => {
+        console.log(err);
+        res.status(500).json(err);
+        return next();
       });
   })).catch((err) => {
     console.log(err);
     res.status(500).json(err);
     return next();
   });
-  */
   res.json({ message: 'successfully imported the playlists!' });
   return next();
 });
