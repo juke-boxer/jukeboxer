@@ -5,6 +5,7 @@ const path = require('path');
 const userRoutes = require('./routes/users');
 const songRoutes = require('./routes/songs');
 const spotifyRoutes = require('./routes/spotify');
+const playlistRoutes = require('./routes/playlists');
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(express.static('dist'));
 router.use('/api/users', userRoutes);
 router.use('/api/songs', songRoutes);
 router.use('/api/spotify', spotifyRoutes);
+router.use('/api/playlists', playlistRoutes);
 
 router.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../../dist/index.html'));
