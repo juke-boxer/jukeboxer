@@ -103,7 +103,7 @@ router.post('/importPlaylists', async (req, res, next) => {
     });
 
   const playlistIds = await Promise.all(playlistsData.map(p => db.query('INSERT INTO playlists (ownerid, title, description, misc_data) VALUES ($1, $2, $3, $4) RETURNING playlistid',
-    [user_id, p.name, p.description, JSON.stringify({ on_spotify: true })])
+    [user_id, p.name, p.description, JSON.stringify({ on_spotify: true, spotify_id: p.id })])
     .then((result) => {
       const { rows } = result;
       return rows[0].playlistid;

@@ -30,6 +30,7 @@
     "js-cookie": "^2.2.1",
     "jsonwebtoken": "^8.5.1",
     "lodash.join": "^4.0.1",
+    "lodash.merge": "^4.6.2",
     "musicbrainz-api": "^0.5.2",
     "node-fetch": "^2.6.0",
     "pg": "^7.17.1",
