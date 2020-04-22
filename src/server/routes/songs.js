@@ -3,6 +3,8 @@ const router = require('express-promise-router')();
 const { MusicBrainzApi } = require('musicbrainz-api');
 const db = require('../db');
 const fs = require('fs');
+const merge = require('lodash.merge');
+
 const acousticbrainz = 'https://acousticbrainz.org';
 
 const mbApi = new MusicBrainzApi({
@@ -29,7 +31,7 @@ async function getSongById(req, res, next) {
 }
 
 async function findSong(req, res, next) {
-  const { artist, song } = req.body;
+  const { artist, song, spotify_id } = req.body;
   const { rows } = await db.query('SELECT songid FROM songs WHERE artist=$1 AND title=$2', [artist, song])
     .catch((err) => {
       console.log(err);
@@ -43,7 +45,7 @@ async function findSong(req, res, next) {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ artist, song })
+      body: JSON.stringify({ artist, song, spotify_id })
     }).then(resp => resp.json()).then((json) => {
       const { id } = json;
       return id;
@@ -88,12 +90,12 @@ async function getAcousticBrainzData(MusicbrainzResult) {
 // MusicBrainz and AcousticBrainz
 // Note that there are three possibilities for whatever song we are creating:
 async function createSong(req, res, next) {
-  const { artist, album, song } = req.body;
+  const { artist, album, song, spotify_id } = req.body;
   const MusicbrainzResult = await getMusicBrainzData(artist, album, song);
   // 1. The song is on the streaming service we are importing from and not on MusicBrainz
   if (!MusicbrainzResult) {
     const id = await db.query('INSERT INTO songs (title, artist, misc_data) VALUES ($1, $2, $3) RETURNING songid',
-      [song, artist, { album }]).then((result) => {
+      [song, artist, { album, spotify_id }]).then((result) => {
       const { rows } = result;
       const { songid } = rows[0];
       return songid;
@@ -109,7 +111,7 @@ async function createSong(req, res, next) {
 
   const AcousticBrainzResult = await getAcousticBrainzData(MusicbrainzResult);
   AcousticBrainzResult.album = album;
-  const DBRow = [MusicbrainzResult.id, song, artist, { album }];
+  const DBRow = [MusicbrainzResult.id, song, artist, { album, spotify_id }];
 
   // 2. The song is on the streaming service and MusicBrainz but not on AcousticBrainz
   if (AcousticBrainzResult.message === 'Not found') {
@@ -128,7 +130,7 @@ async function createSong(req, res, next) {
   }
 
   // 3. The song is on the streaming service, MusicBrainz, and AcousticBrainz
-  DBRow[3] = AcousticBrainzResult;
+  DBRow[3] = merge(DBRow[3], AcousticBrainzResult);
   const id = await db.query('INSERT INTO songs (mbid, title, artist, misc_data) VALUES ($1, $2, $3, $4) RETURNING songid', DBRow)
     .then((result) => {
       const { rows } = result;
@@ -160,8 +162,9 @@ router.post('/importSongs', async (req, res, next) => {
 
   const songIds = await Promise.all(playlistTracks.items.map(async (item) => {
     const { track } = item;
-    const { artists, name } = track;
-    artist = artists[0].name;
+    const { artists, name, id } = track;
+    const spotify_id = id;
+    const artist = artists[0].name;
     const songId = await fetch(`${process.env.FRONTEND_URI}/api/songs/findSong`, {
       method: 'POST',
       headers: {
@@ -169,7 +172,8 @@ router.post('/importSongs', async (req, res, next) => {
       },
       body: JSON.stringify({
         song: name,
-        artist
+        artist,
+        spotify_id
       })
     })
       .then(resp => resp.json())
