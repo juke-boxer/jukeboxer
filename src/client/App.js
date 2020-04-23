@@ -7,6 +7,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Protected from './components/Protected';
 import Playlists from './components/Playlists';
+import EditPlaylist from './components/EditPlaylist';
 import { getSession } from './Auth';
 import './app.css';
 
@@ -26,6 +27,7 @@ export default () => (
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <PrivateRoute path="/playlists" component={Playlists} />
+      <PrivateRoute exact path="/editPlaylist" component={EditPlaylist} />
       <PrivateRoute path="/protected" component={Protected} />
       <Route component={Home} />
     </Switch>
