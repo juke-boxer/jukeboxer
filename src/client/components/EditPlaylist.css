@@ -1,0 +1,64 @@
+.trackList {
+    margin: 10px auto;
+    border-collapse: collapse; 
+    border-radius: 10px;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+b {
+    vertical-align: middle;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+  
+/* Track */
+    ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #888;
+}
+
+/* Handle on hover */
+    ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#playlistName {
+    margin-left: 10px;
+    width: 400px;
+    vertical-align: middle;
+}
+
+th {
+    padding: 10px;
+    user-select: none;
+}
+
+.trackRow {
+    padding: 0 5px;
+    text-align: left;
+    border-bottom: 1px solid grey;
+    cursor: move;
+    pointer-events: all;
+}
+
+.trackRow p {
+    position: relative;
+    margin: 8px;
+    padding: 0;
+    width: auto;
+    pointer-events: none;
+    text-shadow: none;
+}
+
+.trackRow .delete {
+    width: auto;
+    text-align: center;
+    cursor: pointer;
+}
