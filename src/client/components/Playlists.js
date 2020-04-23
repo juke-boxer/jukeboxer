@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { Link, useHistory, useParams } from 'react-router-dom';
 import { getSession } from '../Auth';
 import fetch from 'node-fetch';
 
@@ -28,7 +28,7 @@ export default () => {
         <div style={{ margin: '10px', height: '500px', overflowY: 'scroll' }}>
           {
             playlists.map((playlist, i) => {
-              return <PlaylistButton key={i.toString()} imageLink={playlist.images[0].url} redirectLink={playlist.external_urls.spotify} />;
+              return <PlaylistButton key={i.toString()} id={playlist.id} name={playlist.name} imageLink={playlist.images[0].url} />;
             })
           }
         </div>
@@ -40,8 +40,14 @@ export default () => {
 
 const PlaylistButton = (props) => {
   return (
-    <a href={props.redirectLink} target="_blank">
+    <Link to={{
+      pathname: '/editPlaylist',
+      state: {
+        playlistID: props.id,
+        playlistName: props.name
+      }
+    }}>
       <img style={{ boxShadow: '5px 10px 8px black', margin: '10px', width: '150px', height: '150px' }} alt="Playlist" src={props.imageLink} />
-    </a>
+    </Link>
   );
 };
