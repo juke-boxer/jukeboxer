@@ -6,7 +6,38 @@ const qs = require('querystring');
 const db = require('../db');
 
 const redirect_uri = process.env.SPOTIFY_REDIRECT_URI;
-console.log(redirect_uri);
+
+function refreshToken(userID)
+{
+  db.query('SELECT spotify_refreshtoken FROM users WHERE userid=$1', [userID])
+  .then(res => {
+    const refreshToken = res.rows[0].spotify_refreshtoken;
+
+    const params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', refreshToken);
+    params.append('client_id', process.env.SPOTIFY_CLIENT_ID);
+    params.append('client_secret', process.env.SPOTIFY_CLIENT_SECRET);
+
+    fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      body: params,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+      .then(response => response.json())
+      .then((response) => {
+        const newAccessToken = response.access_token;
+
+        db.query('UPDATE users SET spotify_accesstoken=$1 WHERE userid=$2', [newAccessToken, userID])
+        .catch((err) => {
+          console.log(err);
+          res.status(500).json({ error: err });
+          return next();
+        });
+      });
+  })
+}
+
 router.get('/login', async (req, res) => {
   const userID = req.query.user_id;
 
@@ -14,7 +45,7 @@ router.get('/login', async (req, res) => {
     client_id: process.env.SPOTIFY_CLIENT_ID,
     response_type: 'code',
     redirect_uri,
-    scope: 'playlist-read-private user-read-private user-read-email',
+    scope: 'playlist-modify-public playlist-modify-private playlist-read-private playlist-read-collaborative user-read-private user-read-email',
     state: userID
   };
 
@@ -31,7 +62,6 @@ router.get('/callback', async (req, res, next) => {
   params.append('grant_type', 'authorization_code');
   params.append('client_id', process.env.SPOTIFY_CLIENT_ID);
   params.append('client_secret', process.env.SPOTIFY_CLIENT_SECRET);
-  console.log(params);
 
   const tokens = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
@@ -54,16 +84,14 @@ router.get('/callback', async (req, res, next) => {
       return next();
     });
 
-  console.log(tokens);
-  console.log(userID);
-  db.query('UPDATE users SET misc_data=misc_data::jsonb || $1::jsonb WHERE userid=$2',
-    [JSON.stringify(tokens), userID])
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: err });
-      return next();
-    });
+  db.query('UPDATE users SET spotify_accesstoken=$1, spotify_refreshtoken=$2 WHERE userid=$3', [tokens.spotifyAccessToken, tokens.spotifyRefreshToken, userID])
+  .catch((err) => {
+    console.log(err);
+    res.status(500).json({ error: err });
+    return next();
+  });
 
+  /*
   fetch(`${process.env.FRONTEND_URI}/api/spotify/importPlaylists`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -78,10 +106,106 @@ router.get('/callback', async (req, res, next) => {
     res.status(500).json({ error: err });
     return next();
   });
+  */
 
-  res.redirect(`${process.env.FRONTEND_URI}/playlists`);
+  // Store Spotify ID
+  fetch('https://api.spotify.com/v1/me', { headers: { 'Authorization': `Bearer ${tokens.spotifyAccessToken}` }})
+  .then(userData => userData.json())
+  .then((userData) => {
+    db.query('UPDATE users SET spotify_id=$1 WHERE userid=$2', [userData.id, userID])
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+    });
+  });
+
+  // Store user playlists
+  fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+    headers: { 'Authorization': `Bearer ${tokens.spotifyAccessToken}` }
+  })
+  .then(playlists => playlists.json())
+  .then((playlists) => {
+    db.query('UPDATE users SET spotify_playlists=$1 WHERE userid=$2', [playlists, userID])
+    .then(() => { res.redirect(`${process.env.FRONTEND_URI}/playlists`) });
+  });
 });
 
+router.get('/getPlaylists', async (req, res) => {
+  const userID = req.query.user_id;
+  const { rows } = await db.query('SELECT spotify_playlists FROM users WHERE userid=$1', [userID]);
+  res.json(rows[0].spotify_playlists);
+});
+
+router.get('/getPlaylistTracks', async (req, res) => {
+  const userID = req.query.user_id;
+  const playlistID = req.query.playlist_id;
+
+  await refreshToken(userID);
+
+  const { rows } = await db.query('SELECT spotify_accesstoken FROM users WHERE userid=$1', [userID]);
+  const accessToken = rows[0].spotify_accesstoken;
+
+  fetch(`https://api.spotify.com/v1/playlists/${playlistID}/tracks?fields=items(track(name,id,artists,album))`, {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  })
+  .then(response => response.json())
+  .then((response) => {
+    res.json(response);
+  });
+});
+
+// Export playlist
+router.post('/exportPlaylist', async (req, res, next) => {
+  const userID = req.body.user_id;
+  const playlistName = req.body.name;
+  const trackURIs = req.body.trackURIs;
+  const { rows } = await db.query('SELECT spotify_accesstoken, spotify_id FROM users WHERE userid=$1', [userID]);
+  const accessToken = rows[0].spotify_accesstoken;
+  const spotifyID = rows[0].spotify_id;
+
+  refreshToken(userID);
+
+  fetch(`https://api.spotify.com/v1/users/${spotifyID}/playlists`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: playlistName,
+      public: false,
+      collaborative: false,
+      description: "Created by Jukeboxer"
+    })
+  })
+  .then(playlist => playlist.json())
+  .then(playlist => {
+    console.log("New Playlist ID: " + playlist.id);
+
+    fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/tracks`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        uris: trackURIs
+      })
+    })
+    .then(response => response.json())
+    .then(response => {
+      res.status(201).json({ result: "success"});
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).json({ error: err });
+    })
+  })
+  .catch((err) => {
+    console.log(err);
+    res.status(500).json({ error: err });
+  })
+});
 
 router.post('/importPlaylists', async (req, res, next) => {
   const { access_token, user_id } = req.body;
